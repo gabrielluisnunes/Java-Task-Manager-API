@@ -1,5 +1,7 @@
 package com.taskmanager;
 
+import com.taskmanager.repository.TaskRepository;
+import com.taskmanager.service.TaskService;
 import com.taskmanager.service.TaskService;
 
 import java.util.List;
@@ -8,11 +10,13 @@ public class Main {
     
     public static void main(String[] args) {
         
-        System.out.println("--- Java Task Manager API - Aplicação da Camada de Serviço ---");
+        System.out.println("--- Java Task Manager API - Arquitetura de 3 camadas ---");
 
-        // 1. INSTANCIANDO O SERVIÇO
-        TaskService taskService = new TaskService();
-        
+        //instanciando o repositorio
+        TaskRepository taskRepository = new TaskRepository();
+        // 2. INSTANCIANDO O SERVIÇO (Injetando a dependência do Repositório)
+        TaskService taskService = new TaskService(taskRepository);
+    
         // --- 2. CRIANDO TAREFAS  ---
         
         // Criando a primeira tarefa
