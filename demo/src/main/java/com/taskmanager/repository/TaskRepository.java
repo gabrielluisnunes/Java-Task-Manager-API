@@ -2,10 +2,12 @@ package com.taskmanager.repository;
 
 import com.taskmanager.Task;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 public class TaskRepository {
     //Simulando Banco de Dados com um Map
@@ -21,12 +23,14 @@ public class TaskRepository {
         return task;
     }
 
-    //Buscar tarefa por ID
-    public List<Task> findAll() {
+    public Optional<Task> findById(Long id) {
+        return Optional.ofNullable(tasks.get(id));
+    }
+
+    public List<Task> findAll(){
         return new ArrayList<>(tasks.values());
     }
 
-    //Deletar Tarefa
     public void deleteById(Long id) {
         tasks.remove(id);
     }
