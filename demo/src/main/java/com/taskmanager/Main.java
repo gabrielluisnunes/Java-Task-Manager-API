@@ -1,36 +1,57 @@
 package com.taskmanager;
 
+import com.taskmanager.service.TaskService;
+
+import java.util.List;
+
 public class Main {
     
     public static void main(String[] args) {
         
-        System.out.println("--- Java Task Manager API (Simulação) ---");
+        System.out.println("--- Java Task Manager API - Aplicação da Camada de Serviço ---");
+
+        // 1. INSTANCIANDO O SERVIÇO
+        TaskService taskService = new TaskService();
         
-        // 1. CRIANDO UM NOVO OBJETO (INSTANCIAÇÃO)
-        Task minhaPrimeiraTarefa = new Task();
+        // --- 2. CRIANDO TAREFAS  ---
         
-        System.out.println("\n--- 1. Tarefa Criada (Estado Inicial) ---");
+        // Criando a primeira tarefa
+        Task tarefa1 = new Task();
+        tarefa1.setTitle("Estudar Encapsulamento em Java");
+        tarefa1.setDescription("Revisar Getters e Setters e Modificadores de Acesso.");
         
-        // Usando o GETTER para ler o estado padrão:
-        System.out.println("Status Inicial: " + (minhaPrimeiraTarefa.isCompleted() ? "Concluída" : "Pendente")); 
+        // Chamando o método do Serviço. O Serviço atribui o ID e salva a tarefa.
+        Task tarefaCriada1 = taskService.createTask(tarefa1);
+        System.out.println("\n Tarefa Criada pelo Serviço: ID " + tarefaCriada1.getId());
+
+        // Criando a segunda tarefa
+        Task tarefa2 = new Task();
+        tarefa2.setTitle("Fazer Commit Organizado no Git");
         
-        // 2. MODIFICANDO O ESTADO (USANDO SETTERS)
-        minhaPrimeiraTarefa.setId(1L); 
-        minhaPrimeiraTarefa.setTitle("Configurar o ambiente Java");
-        minhaPrimeiraTarefa.setDescription("Garantir que o VS Code e o Maven estejam com Java 21.");
+        Task tarefaCriada2 = taskService.createTask(tarefa2);
+        System.out.println("✅ Tarefa Criada pelo Serviço: ID " + tarefaCriada2.getId());
+
+        // --- 3. TESTANDO A REGRA DE NEGÓCIO ---
+        // Tentamos criar uma tarefa SEM título. O Serviço deve lançar uma exceção.
+        Task tarefaInvalida = new Task();
         
-        // 3. ACESSANDO O ESTADO MODIFICADO (USANDO GETTERS)
-        System.out.println("\n--- 2. Detalhes da Tarefa ---");
-        System.out.println("ID: " + minhaPrimeiraTarefa.getId());
-        System.out.println("Título: " + minhaPrimeiraTarefa.getTitle());
-        System.out.println("Descrição: " + minhaPrimeiraTarefa.getDescription());
-        System.out.println("Status: " + (minhaPrimeiraTarefa.isCompleted() ? "Concluída" : "Pendente"));
+        System.out.println("\n--- 3. Teste de Validação (Título Vazio) ---");
+        try {
+            taskService.createTask(tarefaInvalida);
+        } catch (IllegalArgumentException e) {
+            // Se o serviço lançar a exceção, capturamos e mostramos a mensagem
+            System.err.println(" REGRA DE NEGÓCIO VIOLADA: " + e.getMessage());
+        }
+
+        // --- 4. BUSCANDO TODAS AS TAREFAS ---
+        List<Task> todasAsTarefas = taskService.getAllTasks();
         
-        // 4. MUDANÇA DE ESTADO 
-        minhaPrimeiraTarefa.setCompleted(true);
+        System.out.println("\n--- 4. Listando Todas as Tarefas (" + todasAsTarefas.size() + " Registros) ---");
         
-        System.out.println("\n--- 3. Tarefa Concluída ---");
-        System.out.println("Novo Status: " + (minhaPrimeiraTarefa.isCompleted() ? "Concluída" : "Pendente"));
-        
+        for (Task task : todasAsTarefas) {
+            // Usamos um loop 'for-each' para iterar sobre a lista.
+            String status = task.isCompleted() ? "✅" : "⏳";
+            System.out.println(String.format("   [%s] ID: %d | Título: %s", status, task.getId(), task.getTitle()));
+        }
     }
 }
