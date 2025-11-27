@@ -36,4 +36,20 @@ public class TaskService {
         return repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Tarefa com ID " + id + " não encontrada."));
     }
+
+    // Metedo de update
+    public Task updateTask(Long id, Task taskDetails) {
+        Task existingTask = repository.findById(id)
+        .orElseThrow(()-> new NoSuchElementException("Tarefa com ID " + id + " não encontrada."));
+
+        if (taskDetails.getTitle() == null || taskDetails.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("O título da tarefa é obrigatório.");
+        }
+
+        existingTask.setTitle(taskDetails.getTitle());
+        existingTask.setDescription(taskDetails.getDescription());
+        existingTask.setCompleted(taskDetails.isCompleted());
+
+        return repository.save(existingTask);
+    }
 }

@@ -46,7 +46,7 @@ public class Main {
             Task tarefaEncontrada = taskService.findTaskById(1L); 
             System.out.println(" Tarefa ID 1 encontrada: " + tarefaEncontrada.getTitle());
         } catch (NoSuchElementException e) {
-             // O catch correto é NoSuchElementException, pois é o que o Service lança.
+             
         } 
         
         // Tentando buscar uma tarefa que não existe (ID 99)
@@ -55,6 +55,24 @@ public class Main {
         } catch (NoSuchElementException e) {
             // O catch correto é NoSuchElementException.
             System.err.println(" EXCEÇÃO TRATADA: " + e.getMessage());
+        }
+
+        System.out.println("\n-- Teste de Update de Tarefa --");
+
+        Task updateDetails = new Task();
+        updateDetails.setTitle("Estudar Encapsulamento em Java - Atualizado");
+        updateDetails.setDescription("Revisar Getters, Setters e Modificadores de Acesso. - Atualizado");
+        updateDetails.setCompleted(true);
+
+        try {
+            //Chamar serviço para atualizar a tarefa de ID 1
+            Task updatedTask = taskService.updateTask(1L, updateDetails);
+
+            System.out.println("Tarefa de ID 1 Atualizada:");
+            System.out.println("Título: " + updatedTask.getTitle());
+            System.out.println("Concluída: " + (updatedTask.isCompleted() ? "Sim" : "Não"));
+        }catch (NoSuchElementException | IllegalArgumentException e) {
+            System.err.println("Erro ao atualizar a tarefa: " + e.getMessage());
         }
         
         // --- 5. BUSCANDO TODAS AS TAREFAS ---
