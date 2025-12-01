@@ -42,7 +42,7 @@ public class Main {
         
         // Buscando uma tarefa que sabemos que existe (ID 1)
         try {
-            // CORREÇÃO: Usando o nome correto do método no serviço
+            //   Usando o nome correto do método no serviço
             Task tarefaEncontrada = taskService.findTaskById(1L); 
             System.out.println(" Tarefa ID 1 encontrada: " + tarefaEncontrada.getTitle());
         } catch (NoSuchElementException e) {
@@ -73,6 +73,22 @@ public class Main {
             System.out.println("Concluída: " + (updatedTask.isCompleted() ? "Sim" : "Não"));
         }catch (NoSuchElementException | IllegalArgumentException e) {
             System.err.println("Erro ao atualizar a tarefa: " + e.getMessage());
+        }
+        
+           System.out.println("\n-- Teste do Delete --");
+
+           try {
+            taskService.deleteTaskById(2L); // Deletando ID 2
+            System.out.println("✅ Tarefa ID 2 excluída com sucesso.");
+        } catch (NoSuchElementException e) {
+            System.err.println("❌ FALHA NA EXCLUSÃO: " + e.getMessage());
+        }
+        
+        // Tentamos excluir uma tarefa que NÃO EXISTE (ID 10)
+        try {
+            taskService.deleteTaskById(10L);
+        } catch (NoSuchElementException e) {
+            System.err.println("❌ EXCEÇÃO TRATADA: " + e.getMessage());
         }
         
         // --- 5. BUSCANDO TODAS AS TAREFAS ---
