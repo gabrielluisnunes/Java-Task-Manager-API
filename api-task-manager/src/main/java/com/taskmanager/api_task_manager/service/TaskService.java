@@ -28,10 +28,6 @@ public class TaskService {
     // CREATE
     public Task createTask(Task task) {
         log.info("Criando nova tarefa com título: {}", task.getTitle());
-
-        if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("O título da tarefa é obrigatório.");
-        }
         return repository.save(task);
     }
 
