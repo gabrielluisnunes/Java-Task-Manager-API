@@ -1,10 +1,11 @@
 package com.taskmanager.api_task_manager.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.taskmanager.api_task_manager.Task;
 import com.taskmanager.api_task_manager.exception.ResourceNotFoundException;
 import com.taskmanager.api_task_manager.repository.TaskRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
