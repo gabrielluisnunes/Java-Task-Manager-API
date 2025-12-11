@@ -1,8 +1,8 @@
 package com.taskmanager.api_task_manager.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.lang.NonNull;
 
 import com.taskmanager.api_task_manager.Task;
 import com.taskmanager.api_task_manager.service.TaskService;
@@ -17,7 +17,7 @@ public class TaskController {
     
     private final TaskService taskService;
     
-    public TaskController(@Autowired TaskService taskService) {
+    public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
@@ -37,21 +37,21 @@ public class TaskController {
     
     // READ BY ID (GET)
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id){
+    public ResponseEntity<Task> getTaskById(@PathVariable @NonNull Long id){
         Task task = taskService.findTaskById(id);
         return ResponseEntity.ok(task);
     }
     
     // UPDATE (PATCH)
     @PatchMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @Valid @RequestBody Task taskDetails){
+    public ResponseEntity<Task> updateTask(@PathVariable @NonNull Long id, @Valid @RequestBody Task taskDetails){
         Task updatedTask = taskService.updateTask(id, taskDetails);
         return ResponseEntity.ok(updatedTask);
     }
     
     // DELETE (DELETE)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTask(@PathVariable @NonNull Long id) {
         taskService.deleteTaskById(id);
         return ResponseEntity.noContent().build();
     }
