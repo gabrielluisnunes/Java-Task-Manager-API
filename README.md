@@ -65,7 +65,7 @@ Este projeto implementa uma API RESTful completa para gerenciamento de tarefas (
 ### Credenciais de Teste
 A autenticação usa HTTP Basic. As credenciais configuradas em `application.properties` são:
 * **User:** `admin`
-* **Password:** `suasenhaforte123`
+* **Password:** `admin123`
 
 ---
 
