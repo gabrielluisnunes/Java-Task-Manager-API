@@ -1,11 +1,11 @@
 package com.taskmanager.api_task_manager.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.taskmanager.api_task_manager.Task;
 import com.taskmanager.api_task_manager.exception.ResourceNotFoundException;
 import com.taskmanager.api_task_manager.repository.TaskRepository;
+import org.springframework.lang.NonNull; 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ public class TaskService {
     private final TaskRepository repository;
 
     // Construtor para Injeção de Dependência
-    public TaskService(@Autowired TaskRepository repository) {
+    public TaskService( TaskRepository repository) {
         this.repository = repository;
     }
 
@@ -33,14 +33,14 @@ public class TaskService {
     }
 
     // READ BY ID
-    public Task findTaskById(Long id) {
-        // Troquei NoSuchElementException por ResourceNotFoundException
+    public Task findTaskById(@NonNull Long id) {
+       
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_NOT_FOUND_MSG, id)));
     }
 
     // UPDATE
-    public Task updateTask(Long id, Task taskDetails) {
+    public Task updateTask(@NonNull Long id, Task taskDetails) {
         log.info("Tentativa de atualizar tarefa ID: {}", id);
 
         Task existingTask = repository.findById(id)
@@ -54,11 +54,9 @@ public class TaskService {
     }
 
     // DELETE
-    public void deleteTaskById(Long id) {
+    public void deleteTaskById(@NonNull Long id) {
         log.warn("Excluindo permanentemente a tarefa ID: {}", id);
 
-        // Troquei NoSuchElementException por ResourceNotFoundException
-        // Primeiro lançar a exceção se não existir
         repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_NOT_FOUND_MSG, id)));
 
