@@ -22,6 +22,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             .authorizeHttpRequests(authorize -> authorize
+
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 //  GETs são públicos
                 .requestMatchers(HttpMethod.GET, "/api/tasks").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tasks/**").permitAll()
