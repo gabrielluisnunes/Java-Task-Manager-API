@@ -82,3 +82,69 @@ h1 {
   margin: 0.5rem 0;
   color: #4b5563;
 }
+
+/* --- Estilos do Formulário de Criação --- */
+
+.task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: var(--color-text-light);
+}
+
+.task-form input,
+.task-form textarea {
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.task-form input:focus,
+.task-form textarea:focus {
+    border-color: var(--color-primary);
+    outline: none;
+}
+
+.task-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.task-form button {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.task-form button:hover:not(:disabled) {
+    background-color: #4f46e5;
+}
+
+.task-form button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Responsividade para Lista e Formulário */
+@media (max-width: 600px) {
+    .container {
+        padding: 1rem;
+    }
+    h1 {
+        font-size: 2rem;
+    }
+    .task-form {
+        padding: 1rem;
+    }
+}

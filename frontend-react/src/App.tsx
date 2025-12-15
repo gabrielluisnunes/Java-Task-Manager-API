@@ -1,51 +1,122 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react'; 
 import axios from 'axios';
 import { type Task } from './types'; 
 import './App.css'; 
 
-// URL API
 const API_URL = 'http://localhost:8080/api/tasks';
 
+// Credenciais de Autenticação
+const AUTH_CONFIG = {
+  auth: {
+    username: 'admin', 
+    password: 'admin123'
+  }
+};
+
 function App() {
+  // --- Estados da Aplicação ---
   const [tasks, setTasks] = useState<Task[]>([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função que busca a lista de tarefas
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        setLoading(true);
-        // GET para a rota pública
-        const response = await axios.get<Task[]>(API_URL);
-        setTasks(response.data);
-        setError(null);
-      } catch (err) {
-        console.error("Erro ao buscar tarefas:", err);
-        setError(" Não foi possível conectar à API. Verifique se o backend está rodando na porta 8080.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Estados para o novo formulário de tarefa
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
+  // --- Funções de Comunicação com a API ---
+
+  // Função para buscar tarefas (GET)
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get<Task[]>(API_URL);
+      setTasks(response.data);
+      setError(null);
+    } catch (err) {
+      console.error("Erro ao buscar tarefas:", err);
+      setError("🛑 Não foi possível conectar à API.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchTasks();
   }, []); 
 
+  // Função para CRIAR uma nova tarefa (POST)
+  const handleCreateTask = async (e: FormEvent) => {
+    e.preventDefault();
+    // Verifica se o título não está vazio
+    if (!newTaskTitle.trim()) return;
+
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      const newTaskData = {
+        title: newTaskTitle,
+        description: newTaskDescription,
+        completed: false
+      };
+      
+      // Envio do POST com a configuração de autenticação 
+      const response = await axios.post<Task>(API_URL, newTaskData, AUTH_CONFIG);
+      
+      // Adicionar a nova tarefa à lista localmente
+      setTasks(prevTasks => [...prevTasks, response.data]);
+
+      // Limpar o formulário
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+
+    } catch (err) {
+      console.error("Erro ao criar tarefa:", err);
+      setError("❌ Falha ao criar tarefa. Verifique as credenciais de autenticação.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   if (loading) {
-    return <div className="container">Carregando tarefas</div>;
+    return <div className="container">Carregando tarefas...</div>;
   }
+
+  // --- Renderização do Componente ---
 
   return (
     <div className="container">
       <h1>Gerenciador de Tarefas</h1>
       
-      {}
-      {error && <p style={{ color: 'red', fontWeight: 'bold' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--color-danger)', fontWeight: 'bold' }}>{error}</p>}
       
-      <h2>Lista de Tarefas</h2>
+      {/* --- FORMULÁRIO DE CRIAÇÃO --- */}
+      <form className="task-form" onSubmit={handleCreateTask}>
+        <input
+          type="text"
+          placeholder="Título da nova tarefa (Obrigatório)"
+          value={newTaskTitle}
+          onChange={(e) => setNewTaskTitle(e.target.value)}
+          required
+          disabled={isCreating}
+        />
+        <textarea
+          placeholder="Descrição (Opcional)"
+          value={newTaskDescription}
+          onChange={(e) => setNewTaskDescription(e.target.value)}
+          disabled={isCreating}
+        />
+        <button type="submit" disabled={isCreating}>
+          {isCreating ? 'Adicionando...' : 'Adicionar Tarefa'}
+        </button>
+      </form>
+
+      {/* --- LISTA DE TAREFAS --- */}
+      <h2>Tarefas Pendentes ({tasks.filter(t => !t.completed).length})</h2>
       
-      {tasks.length === 0 && !error ? (
-        <p>Nenhuma tarefa encontrada. (Conexão OK)</p>
+      {tasks.length === 0 ? (
+        <p>Ainda não há tarefas. Crie uma acima!</p>
       ) : (
         <ul className="task-list">
           {tasks.map(task => (
