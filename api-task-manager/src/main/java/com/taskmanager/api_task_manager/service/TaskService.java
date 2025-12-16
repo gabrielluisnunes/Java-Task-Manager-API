@@ -53,6 +53,30 @@ public class TaskService {
         return repository.save(existingTask);
     }
 
+ public Task updatePartial(Long id, Task partialTask) {
+    if (id == null) {
+        return null;
+    }
+
+    return repository.findById(id)
+            .map(existingTask -> {
+                // Atualiza apenas o campo 'completed'
+                existingTask.setCompleted(partialTask.isCompleted());
+                
+                // Atualiza title e description apenas se foram enviados no JSON
+                if (partialTask.getTitle() != null) {
+                    existingTask.setTitle(partialTask.getTitle());
+                }
+                if (partialTask.getDescription() != null) {
+                    existingTask.setDescription(partialTask.getDescription());
+                }
+                
+                // Salva a tarefa atualizada
+                return repository.save(existingTask);
+            })
+            .orElse(null); 
+}
+
     // DELETE
     public void deleteTaskById(@NonNull Long id) {
         log.warn("Excluindo permanentemente a tarefa ID: {}", id);

@@ -45,10 +45,18 @@ public class TaskController {
     
     // UPDATE (PATCH)
     @PatchMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable @NonNull Long id, @Valid @RequestBody Task taskDetails){
-        Task updatedTask = taskService.updateTask(id, taskDetails);
+public ResponseEntity<Task> updateTaskPartial(
+        @PathVariable Long id,
+        @RequestBody Task partialTask) { 
+    
+    Task updatedTask = taskService.updatePartial(id, partialTask);
+
+    if (updatedTask != null) {
         return ResponseEntity.ok(updatedTask);
+    } else {
+        return ResponseEntity.notFound().build();
     }
+}
     
     // DELETE (DELETE)
     @DeleteMapping("/{id}")
