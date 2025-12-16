@@ -79,6 +79,40 @@ function App() {
     }
   };
 
+  // Função para Atualizar tarefa
+  const handleToggleCompleted = async(task: Task) => {
+    setError(null);
+    try {
+      const updatedData = { completed: !task.completed };
+      //Envia o PATCH para API
+      await axios.patch(`${API_URL}/${task.id}`, updatedData, AUTH_CONFIG);
+      //Atualiza a tarefa localmente
+      setTasks(prevTasks => prevTasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
+    }catch (err) {
+      console.error("Erro ao atualizar tarefa:", err);
+      setError("❌ Falha ao atualizar tarefa. Verifique as credenciais de autenticação.");
+    }
+  };
+
+  // Função para DELETAR a tarefa 
+  const handleDeleteTask = async (id: number) => {
+    if (!globalThis.confirm("Tem certeza que deseja excluir esta tarefa?")) return;
+    
+    setError(null);
+    try {
+      // Envia o DELETE para a API
+      await axios.delete(`${API_URL}/${id}`, AUTH_CONFIG);
+      
+      // Remove do estado localmente
+      setTasks(prevTasks => prevTasks.filter(t => t.id !== id));
+      
+    } catch (err) {
+      console.error("Erro ao deletar tarefa:", err);
+      setError(" Falha ao deletar tarefa. Verifique as credenciais de autenticação.");
+    }
+  };
+
+
   if (loading) {
     return <div className="container">Carregando tarefas...</div>;
   }
@@ -118,12 +152,32 @@ function App() {
       {tasks.length === 0 ? (
         <p>Ainda não há tarefas. Crie uma acima!</p>
       ) : (
-        <ul className="task-list">
+      <ul className="task-list">
           {tasks.map(task => (
             <li key={task.id} className={task.completed ? 'completed' : ''}>
-              <strong>{task.title}</strong>
-              <p>{task.description}</p>
-              <small>{task.completed ? 'Completa' : 'Pendente'}</small>
+              <div className="task-content">
+                <strong>{task.title}</strong>
+                <p>{task.description}</p>
+                <small>{task.completed ? 'Completa' : 'Pendente'}</small>
+              </div>
+              
+              <div className="task-actions">
+                {}
+                <button 
+                  className={task.completed ? 'btn-undo' : 'btn-complete'}
+                  onClick={() => handleToggleCompleted(task)}
+                >
+                  {task.completed ? 'Desfazer' : 'Concluir'}
+                </button>
+                
+                {}
+                <button 
+                  className="btn-delete"
+                  onClick={() => handleDeleteTask(task.id)}
+                >
+                  Excluir
+                </button>
+              </div>
             </li>
           ))}
         </ul>
