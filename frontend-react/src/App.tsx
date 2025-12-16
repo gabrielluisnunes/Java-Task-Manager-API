@@ -79,18 +79,25 @@ function App() {
     }
   };
 
-  // Função para Atualizar tarefa
-  const handleToggleCompleted = async(task: Task) => {
+  // Função para ATUALIZAR o status da tarefa (PATCH)
+const handleToggleCompleted = async (task: Task) => {
     setError(null);
     try {
-      const updatedData = { completed: !task.completed };
-      //Envia o PATCH para API
+      // O novo status é o oposto do status atual
+      const updatedData = { completed: !task.completed }; 
+      
+      // Envia o PATCH para a API com o ID e Autenticação
       await axios.patch(`${API_URL}/${task.id}`, updatedData, AUTH_CONFIG);
-      //Atualiza a tarefa localmente
-      setTasks(prevTasks => prevTasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
-    }catch (err) {
+      
+      // Atualiza o estado localmente
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === task.id ? { ...t, completed: !t.completed } : t
+        )
+      );
+    } catch (err) {
       console.error("Erro ao atualizar tarefa:", err);
-      setError("❌ Falha ao atualizar tarefa. Verifique as credenciais de autenticação.");
+      setError("❌ Falha ao atualizar tarefa. Possível erro de segurança ou conexão.");
     }
   };
 
