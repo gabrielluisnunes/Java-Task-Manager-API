@@ -3,7 +3,7 @@ import axios from 'axios';
 import { type Task } from './types'; 
 import './App.css'; 
 
-const API_URL = 'http://localhost:8080/api/tasks';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/tasks';
 
 // Credenciais de Autenticação
 const AUTH_CONFIG = {
