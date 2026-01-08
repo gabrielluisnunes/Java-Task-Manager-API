@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.lang.NonNull;
 
-import com.taskmanager.api_task_manager.Task;
+import com.taskmanager.api_task_manager.model.Task;
 import com.taskmanager.api_task_manager.service.TaskService;
 
 import jakarta.validation.Valid;
