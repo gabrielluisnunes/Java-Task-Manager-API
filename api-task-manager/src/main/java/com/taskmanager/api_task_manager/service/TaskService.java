@@ -1,94 +1,70 @@
 package com.taskmanager.api_task_manager.service;
 
-import org.springframework.stereotype.Service;
-
 import com.taskmanager.api_task_manager.exception.ResourceNotFoundException;
 import com.taskmanager.api_task_manager.model.Task;
+import com.taskmanager.api_task_manager.model.User;
 import com.taskmanager.api_task_manager.repository.TaskRepository;
-import org.springframework.lang.NonNull; 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.taskmanager.api_task_manager.repository.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TaskService {
 
-    private static final Logger log = LoggerFactory.getLogger(TaskService.class);
+    private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
-    private static final String TASK_NOT_FOUND_MSG = "Tarefa com ID %d não encontrada.";
-
-    private final TaskRepository repository;
-
-    // Construtor para Injeção de Dependência
-    public TaskService( TaskRepository repository) {
-        this.repository = repository;
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
+        this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
     }
 
-    // CREATE
-    public Task createTask(Task task) {
-        log.info("Criando nova tarefa com título: {}", task.getTitle());
-        return repository.save(task);
+    private User getAuthenticatedUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário logado não encontrado."));
     }
 
-    // READ BY ID
-    public Task findTaskById(@NonNull Long id) {
-       
-        return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_NOT_FOUND_MSG, id)));
-    }
-
-    // UPDATE
-    public Task updateTask(@NonNull Long id, Task taskDetails) {
-        log.info("Tentativa de atualizar tarefa ID: {}", id);
-
-        Task existingTask = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_NOT_FOUND_MSG, id)));
-
-        existingTask.setTitle(taskDetails.getTitle());
-        existingTask.setDescription(taskDetails.getDescription());
-        existingTask.setCompleted(taskDetails.isCompleted());
-
-        return repository.save(existingTask);
-    }
-
- public Task updatePartial(Long id, Task partialTask) {
-    if (id == null) {
-        return null;
-    }
-
-    return repository.findById(id)
-            .map(existingTask -> {
-                // Atualiza apenas o campo 'completed'
-                existingTask.setCompleted(partialTask.isCompleted());
-                
-                // Atualiza title e description apenas se foram enviados no JSON
-                if (partialTask.getTitle() != null) {
-                    existingTask.setTitle(partialTask.getTitle());
-                }
-                if (partialTask.getDescription() != null) {
-                    existingTask.setDescription(partialTask.getDescription());
-                }
-                
-                // Salva a tarefa atualizada
-                return repository.save(existingTask);
-            })
-            .orElse(null); 
-}
-
-    // DELETE
-    public void deleteTaskById(@NonNull Long id) {
-        log.warn("Excluindo permanentemente a tarefa ID: {}", id);
-
-        repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_NOT_FOUND_MSG, id)));
-
-        repository.deleteById(id);
-    }
-
-    // READ ALL
     public List<Task> getAllTasks() {
-        return repository.findAll();
+        User user = getAuthenticatedUser();
+        return taskRepository.findByUserId(user.getId());
+    }
+
+    public Task createTask(Task task) {
+        Task safeTask = Objects.requireNonNull(task, "Tarefa não pode ser nula");
+        safeTask.setUser(getAuthenticatedUser());
+        return taskRepository.save(safeTask);
+    }
+
+    public Task findTaskById(Long id) {
+        Long safeId = Objects.requireNonNull(id, "ID não pode ser nulo");
+        User user = getAuthenticatedUser();
+        
+        return taskRepository.findById(safeId)
+                .filter(t -> t.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new ResourceNotFoundException("Tarefa não encontrada ou acesso negado."));
+    }
+
+    public Task updatePartial(Long id, Task partialTask) {
+        Task existingTask = findTaskById(id);
+        Task data = Objects.requireNonNull(partialTask, "Dados de atualização não fornecidos");
+
+        if (data.getTitle() != null) {
+            existingTask.setTitle(data.getTitle());
+        }
+        if (data.getDescription() != null) {
+            existingTask.setDescription(data.getDescription());
+        }
+        existingTask.setCompleted(data.isCompleted());
+
+        return taskRepository.save(existingTask);
+    }
+
+    public void deleteTaskById(Long id) {
+        Task taskToDelete = findTaskById(id);
+        taskRepository.delete(Objects.requireNonNull(taskToDelete));
     }
 }

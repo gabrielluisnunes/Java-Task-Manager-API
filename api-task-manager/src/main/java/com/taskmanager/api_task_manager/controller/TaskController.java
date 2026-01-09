@@ -1,19 +1,17 @@
 package com.taskmanager.api_task_manager.controller;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.lang.NonNull;
-
 import com.taskmanager.api_task_manager.model.Task;
 import com.taskmanager.api_task_manager.service.TaskService;
-
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "htpp://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173")
 public class TaskController {
     
     private final TaskService taskService;
@@ -22,43 +20,28 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    // CREATE (POST)
     @PostMapping
-    public ResponseEntity<Task> createTask(@Valid @RequestBody Task task){
-        Task createdTask = taskService.createTask(task);
-        return ResponseEntity.status(201).body(createdTask);
+    public ResponseEntity<Task> createTask(@Valid @RequestBody @NonNull Task task){
+        return ResponseEntity.status(201).body(taskService.createTask(task));
     }
     
-    // READ (GET ALL)
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
-        List<Task> tasks = taskService.getAllTasks();
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.getAllTasks());
     } 
     
-    // READ BY ID (GET)
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTaskById(@PathVariable @NonNull Long id){
-        Task task = taskService.findTaskById(id);
-        return ResponseEntity.ok(task);
+        return ResponseEntity.ok(taskService.findTaskById(id));
     }
     
-    // UPDATE (PATCH)
     @PatchMapping("/{id}")
-public ResponseEntity<Task> updateTaskPartial(
-        @PathVariable Long id,
-        @RequestBody Task partialTask) { 
-    
-    Task updatedTask = taskService.updatePartial(id, partialTask);
-
-    if (updatedTask != null) {
-        return ResponseEntity.ok(updatedTask);
-    } else {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Task> updateTaskPartial(
+            @PathVariable @NonNull Long id,
+            @RequestBody @NonNull Task partialTask) { 
+        return ResponseEntity.ok(taskService.updatePartial(id, partialTask));
     }
-}
     
-    // DELETE (DELETE)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable @NonNull Long id) {
         taskService.deleteTaskById(id);

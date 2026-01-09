@@ -27,7 +27,7 @@ public class AuthController {
 
     // 1. Endpoint de Registro
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
+    public ResponseEntity<User> register(@RequestBody User user) {
         return ResponseEntity.ok(authService.register(user));
     }
 
