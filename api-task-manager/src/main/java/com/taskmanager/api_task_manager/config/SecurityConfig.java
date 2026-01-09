@@ -2,15 +2,13 @@ package com.taskmanager.api_task_manager.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer; 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy; 
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-
-import java.util.List;
 import org.springframework.web.cors.CorsConfiguration;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -18,38 +16,36 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
             // 1. CONFIGURAÇÃO CORS 
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
-                // Permitir o domínio exato do React
-                config.setAllowedOrigins(List.of("http://localhost:5173"));
-                // Permitir todos os métodos
+                config.setAllowedOrigins(List.of("http://localhost:5173", "https://seu-front.vercel.app"));
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-                config.setAllowedHeaders(List.of("*"));
+                config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+                config.setAllowCredentials(true);
                 return config;
             }))
-
+            
             .csrf(csrf -> csrf.disable()) 
             
-            // Adiciona a configuração de Sessão Stateless
+            // 2. SESSÃO STATELESS (Obrigatório para JWT/SaaS)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
-            .authorizeHttpRequests(authorize -> authorize
-                
-                // Rotas de Documentação (Swagger)
+            .authorizeHttpRequests(auth -> auth
+                // Rotas Públicas (Cadastro, Login e Documentação)
+                .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
-                // GETs são públicos, e OPTIONS também deve ser permitido
-                .requestMatchers(HttpMethod.GET, "/api/tasks").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/tasks/**").permitAll()
-                .requestMatchers(HttpMethod.OPTIONS, "/api/tasks/**").permitAll()
-
-                // (POST, PATCH, DELETE) exige autenticação
+                // Todo o resto (inclusive GET /api/tasks) agora exige login
                 .anyRequest().authenticated()
             )
-            .httpBasic(Customizer.withDefaults()); 
+            // REMOVEMOS o httpBasic() pois usaremos JWT
+            .build();
+    }
 
-        return http.build();
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
