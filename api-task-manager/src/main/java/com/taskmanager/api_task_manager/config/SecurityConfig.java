@@ -1,6 +1,6 @@
 package com.taskmanager.api_task_manager.config;
 
-import com.taskmanager.api_task_manager.security.JwtRequestFilter; // Import do seu filtro
+import com.taskmanager.api_task_manager.security.JwtRequestFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,7 +17,6 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 1. Injetamos o filtro que você criou
     private final JwtRequestFilter jwtRequestFilter;
 
     public SecurityConfig(JwtRequestFilter jwtRequestFilter) {
@@ -39,15 +38,25 @@ public class SecurityConfig {
             
             .csrf(csrf -> csrf.disable()) 
             
-            // Sessão Stateless (fundamental para SaaS/JWT)
+            // Sessão Stateless (fundamental para JWT)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             .authorizeHttpRequests(auth -> auth
+                // Rotas Públicas (Auth e Swagger)
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**","/swagger-ui.html" ).permitAll()
+                .requestMatchers(
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
+                
+                // Restante precisa de autenticação
                 .anyRequest().authenticated()
             )
             
+            // Adiciona o filtro JWT antes do filtro de autenticação padrão
             .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
             
             .build();

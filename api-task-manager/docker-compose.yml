@@ -6,9 +6,9 @@ services:
     environment:
       POSTGRES_USER: saas_admin
       POSTGRES_PASSWORD: password123
-      POSTGRES_DB: taskmanager_db
+      POSTGRES_DB: task_manager_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
