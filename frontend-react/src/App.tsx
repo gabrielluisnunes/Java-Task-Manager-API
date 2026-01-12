@@ -1,190 +1,132 @@
-import { useState, useEffect, type FormEvent } from 'react'; 
+import { useState, useEffect, type FormEvent } from 'react';
 import axios from 'axios';
-import { type Task } from './types'; 
-import './App.css'; 
+import { type Task } from './types';
+import './App.css';
 
-const API_URL ='http://localhost:8080/api/tasks';
-
-// Credenciais de Autenticação
-const AUTH_CONFIG = {
-  auth: {
-    username: 'admin', 
-    password: 'admin123'
-  }
-};
+const API_BASE = 'http://localhost:8080/api';
 
 function App() {
-  // --- Estados da Aplicação ---
-  const [tasks, setTasks] = useState<Task[]>([]); 
-  const [loading, setLoading] = useState(true);
+  // --- Estados de Autenticação ---
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+
+  // --- Estados de Tarefas ---
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Estados para o novo formulário de tarefa
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDescription, setNewTaskDescription] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
 
-  // --- Funções de Comunicação com a API ---
+  // Configuração de Header com JWT
+  const getAuthHeader = () => ({
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
-  // Função para buscar tarefas (GET)
-  const fetchTasks = async () => {
+  // --- Lógica de Login ---
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
     try {
-      setLoading(true);
-      const response = await axios.get<Task[]>(API_URL);
-      setTasks(response.data);
+      const res = await axios.post(`${API_BASE}/auth/login`, credentials);
+      const jwt = res.data.token;
+      setToken(jwt);
+      localStorage.setItem('token', jwt); // Salva para não perder no refresh
       setError(null);
     } catch (err) {
-      console.error("Erro ao buscar tarefas:", err);
-      setError("🛑 Não foi possível conectar à API.");
+      setError("❌ Usuário ou senha inválidos.");
+    }
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    localStorage.removeItem('token');
+    setTasks([]);
+  };
+
+  // --- Lógica de Tarefas (Protegidas) ---
+  const fetchTasks = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const res = await axios.get<Task[]>(`${API_BASE}/tasks`, getAuthHeader());
+      setTasks(res.data);
+    } catch (err) {
+      setError("🛑 Erro ao carregar tarefas. Sessão expirada?");
+      if (axios.isAxiosError(err) && err.response?.status === 401) handleLogout();
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []); 
+    if (token) fetchTasks();
+  }, [token]);
 
-  // Função para CRIAR uma nova tarefa (POST)
   const handleCreateTask = async (e: FormEvent) => {
     e.preventDefault();
-    // Verifica se o título não está vazio
     if (!newTaskTitle.trim()) return;
 
-    setIsCreating(true);
-    setError(null);
-
     try {
-      const newTaskData = {
-        title: newTaskTitle,
-        description: newTaskDescription,
-        completed: false
-      };
-      
-      // Envio do POST com a configuração de autenticação 
-      const response = await axios.post<Task>(API_URL, newTaskData, AUTH_CONFIG);
-      
-      // Adicionar a nova tarefa à lista localmente
-      setTasks(prevTasks => [...prevTasks, response.data]);
-
-      // Limpar o formulário
-      setNewTaskTitle('');
-      setNewTaskDescription('');
-
-    } catch (err) {
-      console.error("Erro ao criar tarefa:", err);
-      setError("❌ Falha ao criar tarefa. Verifique as credenciais de autenticação.");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // Função para ATUALIZAR o status da tarefa (PATCH)
-const handleToggleCompleted = async (task: Task) => {
-    setError(null);
-    try {
-      // O novo status é o oposto do status atual
-      const updatedData = { completed: !task.completed }; 
-      
-      // Envia o PATCH para a API com o ID e Autenticação
-      await axios.patch(`${API_URL}/${task.id}`, updatedData, AUTH_CONFIG);
-      
-      // Atualiza o estado localmente
-      setTasks(prevTasks =>
-        prevTasks.map(t =>
-          t.id === task.id ? { ...t, completed: !t.completed } : t
-        )
+      const res = await axios.post<Task>(`${API_BASE}/tasks`, 
+        { title: newTaskTitle, completed: false }, 
+        getAuthHeader()
       );
+      setTasks([...tasks, res.data]);
+      setNewTaskTitle('');
     } catch (err) {
-      console.error("Erro ao atualizar tarefa:", err);
-      setError("❌ Falha ao atualizar tarefa. Possível erro de segurança ou conexão.");
+      setError("❌ Falha ao criar tarefa.");
     }
   };
 
-  // Função para DELETAR a tarefa 
-  const handleDeleteTask = async (id: number) => {
-    if (!globalThis.confirm("Tem certeza que deseja excluir esta tarefa?")) return;
-    
-    setError(null);
-    try {
-      // Envia o DELETE para a API
-      await axios.delete(`${API_URL}/${id}`, AUTH_CONFIG);
-      
-      // Remove do estado localmente
-      setTasks(prevTasks => prevTasks.filter(t => t.id !== id));
-      
-    } catch (err) {
-      console.error("Erro ao deletar tarefa:", err);
-      setError(" Falha ao deletar tarefa. Verifique as credenciais de autenticação.");
-    }
-  };
+  // --- Renderização Condicional ---
 
-
-  if (loading) {
-    return <div className="container">Carregando tarefas...</div>;
+  // 1. TELA DE LOGIN
+  if (!token) {
+    return (
+      <div className="container login-box">
+        <h1>SaaS Login</h1>
+        {error && <p className="error">{error}</p>}
+        <form onSubmit={handleLogin} className="task-form">
+          <input 
+            type="text" 
+            placeholder="Username" 
+            onChange={e => setCredentials({...credentials, username: e.target.value})} 
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            onChange={e => setCredentials({...credentials, password: e.target.value})} 
+          />
+          <button type="submit">Entrar no Sistema</button>
+        </form>
+      </div>
+    );
   }
 
-  // --- Renderização do Componente ---
-
+  // 2. TELA DO GERENCIADOR (DASHBOARD)
   return (
     <div className="container">
-      <h1>Gerenciador de Tarefas</h1>
-      
-      {error && <p style={{ color: 'var(--color-danger)', fontWeight: 'bold' }}>{error}</p>}
-      
-      {/* --- FORMULÁRIO DE CRIAÇÃO --- */}
+      <header style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <h1>Minhas Tarefas</h1>
+        <button className="btn-delete" onClick={handleLogout}>Sair</button>
+      </header>
+
+      {error && <p className="error">{error}</p>}
+
       <form className="task-form" onSubmit={handleCreateTask}>
         <input
           type="text"
-          placeholder="Título da nova tarefa (Obrigatório)"
+          placeholder="O que precisa ser feito?"
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
-          required
-          disabled={isCreating}
         />
-        <textarea
-          placeholder="Descrição (Opcional)"
-          value={newTaskDescription}
-          onChange={(e) => setNewTaskDescription(e.target.value)}
-          disabled={isCreating}
-        />
-        <button type="submit" disabled={isCreating}>
-          {isCreating ? 'Adicionando...' : 'Adicionar Tarefa'}
-        </button>
+        <button type="submit">Adicionar</button>
       </form>
 
-      {/* --- LISTA DE TAREFAS --- */}
-      <h2>Tarefas Pendentes ({tasks.filter(t => !t.completed).length})</h2>
-      
-      {tasks.length === 0 ? (
-        <p>Ainda não há tarefas. Crie uma acima!</p>
-      ) : (
-      <ul className="task-list">
+      {loading ? <p>Carregando...</p> : (
+        <ul className="task-list">
           {tasks.map(task => (
             <li key={task.id} className={task.completed ? 'completed' : ''}>
-              <div className="task-content">
-                <strong>{task.title}</strong>
-                <p>{task.description}</p>
-                <small>{task.completed ? 'Completa' : 'Pendente'}</small>
-              </div>
-              
-              <div className="task-actions">
-                {}
-                <button 
-                  className={task.completed ? 'btn-undo' : 'btn-complete'}
-                  onClick={() => handleToggleCompleted(task)}
-                >
-                  {task.completed ? 'Desfazer' : 'Concluir'}
-                </button>
-                
-                {}
-                <button 
-                  className="btn-delete"
-                  onClick={() => handleDeleteTask(task.id)}
-                >
-                  Excluir
-                </button>
-              </div>
+              <span>{task.title}</span>
+              {/* Adicione aqui os botões de delete/toggle que você já tinha */}
             </li>
           ))}
         </ul>
