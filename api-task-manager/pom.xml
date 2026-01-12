@@ -14,7 +14,7 @@
     <artifactId>api-task-manager</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>api-task-manager</name>
-    <description>API de Gerenciamento de Tarefas</description>
+    <description>Task Manager</description>
     
     <properties>
         <java.version>25</java.version>
