@@ -29,8 +29,7 @@ public class TaskService {
     }
 
     public List<Task> getAllTasks() {
-        User user = getAuthenticatedUser();
-        return taskRepository.findByUserId(user.getId());
+        return taskRepository.findByUserId(getAuthenticatedUser().getId());
     }
 
     public Task createTask(Task task) {
@@ -50,14 +49,10 @@ public class TaskService {
 
     public Task updatePartial(Long id, Task partialTask) {
         Task existingTask = findTaskById(id);
-        Task data = Objects.requireNonNull(partialTask, "Dados de atualização não fornecidos");
+        Task data = Objects.requireNonNull(partialTask);
 
-        if (data.getTitle() != null) {
-            existingTask.setTitle(data.getTitle());
-        }
-        if (data.getDescription() != null) {
-            existingTask.setDescription(data.getDescription());
-        }
+        if (data.getTitle() != null) existingTask.setTitle(data.getTitle());
+        if (data.getDescription() != null) existingTask.setDescription(data.getDescription());
         existingTask.setCompleted(data.isCompleted());
 
         return taskRepository.save(existingTask);
