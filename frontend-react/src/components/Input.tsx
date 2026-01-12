@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { LucideIcon } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 
 const InputContainer = styled.div`
   position: relative;
