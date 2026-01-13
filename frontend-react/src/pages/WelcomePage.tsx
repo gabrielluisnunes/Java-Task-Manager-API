@@ -80,7 +80,8 @@ const NavItem = styled.button<{ active?: boolean }>`
 
 interface Task {
   id: number;
-  text: string;
+  title: string;      
+  description?: string;
   completed: boolean;
 }
 
@@ -92,10 +93,10 @@ export const WelcomePage = () => {
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const response = await api.get('/tasks'); 
+        const response = await api.get('/api/tasks'); 
         setTasks(response.data);
       } catch (error) {
-        console.error("Erro ao carregar tarefas do banco:", error);
+        console.error("Erro ao carregar:", error);
       }
     };
     loadTasks();
@@ -105,35 +106,36 @@ export const WelcomePage = () => {
   const addTask = async () => {
     if (!taskInput.trim()) return;
     try {
-      const response = await api.post('/tasks', { 
-        text: taskInput, 
+      const response = await api.post('/api/tasks', { 
+        title: taskInput,     
         completed: false 
       });
-      setTasks([response.data, ...tasks]); 
+      setTasks([response.data, ...tasks]);
       setTaskInput('');
     } catch (error) {
-      alert("Erro ao salvar no banco de dados.");
+      console.error("Erro ao salvar:", error);
+      alert("Erro ao salvar no banco. Verifique se o backend está associando o User corretamente.");
     }
   };
 
-  // 3. MARCAR COMO CONCLUÍDO (PUT)
+  // 3. ATUALIZAR STATUS (PATCH)
   const toggleTask = async (task: Task) => {
     try {
-      const updatedTask = { ...task, completed: !task.completed };
-      await api.put(`/tasks/${task.id}`, updatedTask);
-      setTasks(tasks.map(t => t.id === task.id ? updatedTask : t));
+      const updatedStatus = { completed: !task.completed };
+      const response = await api.patch(`/api/tasks/${task.id}`, updatedStatus);
+      setTasks(tasks.map(t => t.id === task.id ? response.data : t));
     } catch (error) {
-      alert("Erro ao atualizar tarefa.");
+      alert("Erro ao atualizar status.");
     }
   };
 
   // 4. DELETAR TAREFA (DELETE)
   const deleteTask = async (id: number) => {
     try {
-      await api.delete(`/tasks/${id}`);
+      await api.delete(`/api/tasks/${id}`);
       setTasks(tasks.filter(t => t.id !== id));
     } catch (error) {
-      alert("Erro ao excluir do banco.");
+      alert("Erro ao excluir.");
     }
   };
 
@@ -150,19 +152,7 @@ export const WelcomePage = () => {
             <h2 style={{ color: 'white', fontSize: '1.8rem', margin: 0 }}>Minhas Tarefas</h2>
             <p style={{ color: '#94a3b8' }}>{tasks.filter(t => !t.completed).length} pendentes</p>
           </div>
-          <button 
-            onClick={handleLogout} 
-            style={{ 
-              background: 'rgba(239, 68, 68, 0.1)', 
-              border: 'none', 
-              color: '#ef4444', 
-              padding: '8px', 
-              borderRadius: '10px', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
+          <button onClick={handleLogout} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}>
             <LogOut size={20} />
           </button>
         </header>
@@ -181,11 +171,6 @@ export const WelcomePage = () => {
         </div>
 
         <section style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {tasks.length === 0 && (
-            <p style={{ color: '#475569', textAlign: 'center', marginTop: '20px' }}>
-              Nenhuma tarefa salva no seu perfil.
-            </p>
-          )}
           {tasks.map(task => (
             <TaskCard key={task.id} completed={task.completed}>
               <div 
@@ -196,24 +181,11 @@ export const WelcomePage = () => {
                   <CheckCircle2 size={22} color="#22c55e" /> : 
                   <Circle size={22} color="#475569" />
                 }
-                <span style={{ 
-                  color: 'white', 
-                  textDecoration: task.completed ? 'line-through' : 'none',
-                  transition: 'all 0.2s'
-                }}>
-                  {task.text}
+                <span style={{ color: 'white', textDecoration: task.completed ? 'line-through' : 'none' }}>
+                  {task.title}
                 </span>
               </div>
-              <button 
-                onClick={() => deleteTask(task.id)} 
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: '#94a3b8', 
-                  cursor: 'pointer',
-                  padding: '5px'
-                }}
-              >
+              <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
                 <Trash2 size={18} />
               </button>
             </TaskCard>
