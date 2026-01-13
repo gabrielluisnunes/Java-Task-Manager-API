@@ -1,22 +1,26 @@
 import { useState } from 'react';
-import { User, Lock, Mail, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, UserPlus } from 'lucide-react';
 import styled from 'styled-components';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import api from '../services/api';
 
-const PageWrapper = styled.div`
+const PageContainer = styled.div`
   display: flex;
-  align-items: center;
   justify-content: center;
-  min-height: 100vh; 
-  width: 100vw;      
-  padding: 1rem;     
-  
-  @media (max-width: 480px) {
-    padding: 0.5rem;
-  }
+  align-items: center;
+  width: 100vw;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+`;
+
+const Form = styled.form`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
 `;
 
 export const RegisterPage = ({ onSwitch }: { onSwitch: () => void }) => {
@@ -28,51 +32,63 @@ export const RegisterPage = ({ onSwitch }: { onSwitch: () => void }) => {
     setLoading(true);
     try {
       await api.post('/auth/register', formData);
-      alert("Conta criada com sucesso! Faça seu login.");
+      alert("Sucesso! Agora faça o login.");
       onSwitch();
     } catch (error) {
-      alert("Erro ao cadastrar. Tente outro usuário.");
+      alert("Erro ao cadastrar.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <PageWrapper>
-      <Card initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '2rem' }}>Cadastro</h2>
-        <form onSubmit={handleRegister}>
+    <PageContainer>
+      <Card 
+        initial={{ opacity: 0, x: 20 }} 
+        animate={{ opacity: 1, x: 0 }}
+        style={{ width: '100%', maxWidth: '400px' }} 
+      >
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '2rem', color: '#fff', fontWeight: 800, margin: 0 }}>Novo Cadastro</h2>
+          <p style={{ color: '#94a3b8', marginTop: '10px' }}>Crie sua conta em poucos segundos</p>
+        </div>
+
+        <Form onSubmit={handleRegister}>
           <Input 
             icon={User} 
             placeholder="Username" 
             onChange={(e) => setFormData({...formData, username: e.target.value})}
-            required 
+            required
           />
           <Input 
             icon={Mail} 
             type="email" 
             placeholder="E-mail" 
             onChange={(e) => setFormData({...formData, email: e.target.value})}
-            required 
+            required
           />
           <Input 
             icon={Lock} 
             type="password" 
             placeholder="Senha" 
             onChange={(e) => setFormData({...formData, password: e.target.value})}
-            required 
+            required
           />
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} style={{ width: '100%' }}>
             {loading ? 'Cadastrando...' : <><UserPlus size={18} /> Criar Conta</>}
           </Button>
-        </form>
-        <p style={{ marginTop: '1.5rem', textAlign: 'center', color: '#94a3b8' }}>
-          Já tem conta? <span 
-            onClick={onSwitch} 
-            style={{ color: '#6366f1', cursor: 'pointer', fontWeight: 'bold' }}
-          >Fazer Login</span>
-        </p>
+        </Form>
+
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <span style={{ color: '#94a3b8' }}>Já tem uma conta? </span>
+          <button 
+            onClick={onSwitch}
+            style={{ background: 'none', border: 'none', color: '#6366f1', fontWeight: 700, cursor: 'pointer' }}
+          >
+            Fazer login
+          </button>
+        </div>
       </Card>
-    </PageWrapper>
+    </PageContainer>
   );
 };
