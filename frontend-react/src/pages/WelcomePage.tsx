@@ -1,118 +1,82 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { 
-  LogOut, Plus, CheckCircle2, 
-  Star, Home, List, User, Trash2, Circle,
-  LayoutDashboard, CheckSquare, Clock
+  LogOut, Plus, CheckCircle2, Star, Home, List, 
+  User, Trash2, Circle, Calendar as CalendarIcon 
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import api from '../services/api';
 
-// --- Estilos de Layout ---
+// --- Styled Components Responsivos ---
 const ShellContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100vw;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, #1e293b, #0f172a);
-  padding: 2rem 1.5rem 120px 1.5rem; 
+  background: #0f172a;
+  padding: 1.5rem 1rem 120px 1rem; 
   box-sizing: border-box;
 `;
 
 const ContentArea = styled.main`
   width: 100%;
-  max-width: 600px; 
+  max-width: 480px; 
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 `;
 
-// --- Dashboard Cards ---
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-`;
-
-const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  
-  h3 { color: #94a3b8; font-size: 0.8rem; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-  p { color: white; font-size: 1.5rem; font-weight: bold; margin: 0; }
+const PriorityBadge = styled.span<{ level: string }>`
+  font-size: 0.65rem;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 800;
+  background: ${props => 
+    props.level === 'HIGH' ? 'rgba(239, 68, 68, 0.2)' : 
+    props.level === 'MEDIUM' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)'};
+  color: ${props => 
+    props.level === 'HIGH' ? '#f87171' : 
+    props.level === 'MEDIUM' ? '#fbbf24' : '#4ade80'};
 `;
 
 const TaskCard = styled.div<{ completed: boolean }>`
-  background: ${props => props.theme.colors.glass};
-  border: 1px solid ${props => props.completed ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
-  border-radius: 18px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid ${props => props.completed ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.05)'};
+  border-radius: 22px;
   padding: 1.2rem;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: transform 0.2s, background 0.2s;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-
-  &:hover {
-    transform: scale(1.01);
-    background: rgba(255, 255, 255, 0.05);
-  }
-`;
-
-const BottomNav = styled.nav`
-  position: fixed;
-  bottom: 25px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 420px;
-  height: 70px;
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 100;
-`;
-
-const NavItem = styled.button<{ active?: boolean }>`
-  background: none;
-  border: none;
-  color: ${props => props.active ? '#818cf8' : '#64748b'};
-  display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: ${props => props.active ? '600' : '400'};
-  transition: all 0.3s;
+  gap: 12px;
+`;
 
-  &:hover { color: #818cf8; transform: translateY(-2px); }
+const DateInput = styled.input`
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 0.8rem;
+  outline: none;
+  &::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 `;
 
 interface Task {
   id: number;
   title: string;
   completed: boolean;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  dueDate: string;
 }
 
 export const WelcomePage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskInput, setTaskInput] = useState('');
+  const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
+  const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
+  useEffect(() => { loadTasks(); }, []);
 
   const loadTasks = async () => {
     try {
@@ -124,10 +88,15 @@ export const WelcomePage = () => {
   const addTask = async () => {
     if (!taskInput.trim()) return;
     try {
-      const response = await api.post('/tasks', { title: taskInput, completed: false });
+      const response = await api.post('/tasks', { 
+        title: taskInput, 
+        priority: priority,
+        completed: false,
+        dueDate: dueDate // Enviando a data selecionada no input
+      });
       setTasks([response.data, ...tasks]);
       setTaskInput('');
-    } catch (error) { alert("Erro ao salvar"); }
+    } catch (error) { alert("Erro ao salvar tarefa."); }
   };
 
   const toggleTask = async (task: Task) => {
@@ -145,91 +114,92 @@ export const WelcomePage = () => {
     } catch (error) { console.error(error); }
   };
 
-  const completedCount = tasks.filter(t => t.completed).length;
-  const pendingCount = tasks.length - completedCount;
+  // Função para formatar a data de forma segura
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Sem data";
+    const date = new Date(dateString);
+    // Adiciona o offset do timezone para evitar que a data mude para o dia anterior
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    return isNaN(adjustedDate.getTime()) ? "Data Inválida" : adjustedDate.toLocaleDateString('pt-BR');
+  };
+
+  const translatePriority = (p: string) => {
+    if (p === 'HIGH') return 'ALTA';
+    if (p === 'MEDIUM') return 'MÉDIA';
+    return 'BAIXA';
+  };
 
   return (
     <ShellContainer>
       <ContentArea>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h1 style={{ color: 'white', fontSize: '2rem', margin: 0, fontWeight: 800 }}>Olá, Gabriel</h1>
-            <p style={{ color: '#64748b', marginTop: '4px' }}>Vamos organizar seu dia?</p>
-          </div>
-          <button 
-            onClick={() => { localStorage.removeItem('token'); window.location.href = '/'; }} 
-            style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', padding: '10px', borderRadius: '14px', cursor: 'pointer' }}
-          >
-            <LogOut size={20} />
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>Minha Rotina</h1>
+          <button onClick={() => { localStorage.removeItem('token'); window.location.href='/'; }} 
+            style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '10px' }}>
+            <LogOut size={18} />
           </button>
         </header>
 
-        <StatsGrid>
-          <StatCard>
-            <div style={{ background: 'rgba(129, 140, 248, 0.1)', padding: '10px', borderRadius: '12px' }}>
-              <Clock color="#818cf8" size={24} />
-            </div>
-            <div>
-              <h3>Pendentes</h3>
-              <p>{pendingCount}</p>
-            </div>
-          </StatCard>
-          <StatCard>
-            <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '10px', borderRadius: '12px' }}>
-              <CheckSquare color="#22c55e" size={24} />
-            </div>
-            <div>
-              <h3>Concluídas</h3>
-              <p>{completedCount}</p>
-            </div>
-          </StatCard>
-        </StatsGrid>
-
-        <div style={{ display: 'flex', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '28px' }}>
           <Input 
             icon={Plus} 
-            placeholder="O que precisa ser feito?" 
+            placeholder="O que vamos realizar?" 
             value={taskInput}
             onChange={(e) => setTaskInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addTask()}
-            style={{ border: 'none', background: 'transparent' }}
           />
-          <Button onClick={addTask} style={{ width: '120px', borderRadius: '14px' }}>Adicionar</Button>
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button onClick={() => setPriority('LOW')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'LOW' ? '#22c55e' : '#1e293b', color: 'white', fontWeight: 'bold' }}>BAIXA</button>
+              <button onClick={() => setPriority('MEDIUM')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'MEDIUM' ? '#f59e0b' : '#1e293b', color: 'white', fontWeight: 'bold' }}>MÉDIA</button>
+              <button onClick={() => setPriority('HIGH')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'HIGH' ? '#ef4444' : '#1e293b', color: 'white', fontWeight: 'bold' }}>ALTA</button>
+            </div>
+            
+            <DateInput 
+              type="date" 
+              value={dueDate} 
+              onChange={(e) => setDueDate(e.target.value)} 
+            />
+          </div>
+
+          <Button onClick={addTask} style={{ borderRadius: '14px', height: '45px' }}>Criar Tarefa</Button>
         </div>
 
         <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h2 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <LayoutDashboard size={18} color="#818cf8" /> Tarefas de Hoje
-          </h2>
-          
-          {tasks.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#475569' }}>
-              <p>Tudo limpo por aqui! 🚀</p>
-            </div>
-          ) : (
-            tasks.map(task => (
-              <TaskCard key={task.id} completed={task.completed}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, cursor: 'pointer' }} onClick={() => toggleTask(task)}>
-                  {task.completed ? <CheckCircle2 size={24} color="#22c55e" /> : <Circle size={24} color="#334155" />}
-                  <span style={{ color: 'white', textDecoration: task.completed ? 'line-through' : 'none', opacity: task.completed ? 0.5 : 1 }}>
-                    {task.title}
-                  </span>
+          {tasks.map(task => (
+            <TaskCard key={task.id} completed={task.completed}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: '14px', flex: 1 }} onClick={() => toggleTask(task)}>
+                  <div style={{ marginTop: '3px' }}>
+                    {task.completed ? <CheckCircle2 size={24} color="#22c55e" /> : <Circle size={24} color="#334155" />}
+                  </div>
+                  <div>
+                    <p style={{ color: 'white', margin: 0, fontSize: '0.95rem', textDecoration: task.completed ? 'line-through' : 'none', opacity: task.completed ? 0.5 : 1 }}>
+                      {task.title}
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
+                      <PriorityBadge level={task.priority}>{translatePriority(task.priority)}</PriorityBadge>
+                      <span style={{ color: '#64748b', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CalendarIcon size={14} /> {formatDate(task.dueDate)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
-                  <Trash2 size={20} />
+                  <Trash2 size={18} />
                 </button>
-              </TaskCard>
-            ))
-          )}
+              </div>
+            </TaskCard>
+          ))}
         </section>
       </ContentArea>
 
-      <BottomNav>
-        <NavItem active><Home size={26} />Início</NavItem>
-        <NavItem><List size={26} />Tarefas</NavItem>
-        <NavItem><Star size={26} />Favoritos</NavItem>
-        <NavItem><User size={26} />Perfil</NavItem>
-      </BottomNav>
+      <nav style={{ position: 'fixed', bottom: '25px', width: '90%', maxWidth: '400px', height: '70px', background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(10px)', borderRadius: '25px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ color: '#6366f1', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><Home size={22} /><span style={{fontSize: '0.65rem', fontWeight: 700}}>Início</span></div>
+        <div style={{ color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><List size={22} /><span style={{fontSize: '0.65rem'}}>Tarefas</span></div>
+        <div style={{ color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><Star size={22} /><span style={{fontSize: '0.65rem'}}>Favoritos</span></div>
+        <div style={{ color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><User size={22} /><span style={{fontSize: '0.65rem'}}>Perfil</span></div>
+      </nav>
     </ShellContainer>
   );
 };
