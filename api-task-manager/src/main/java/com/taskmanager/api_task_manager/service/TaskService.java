@@ -48,15 +48,18 @@ public class TaskService {
     }
 
     public Task updatePartial(Long id, Task partialTask) {
-        Task existingTask = findTaskById(id);
-        Task data = Objects.requireNonNull(partialTask);
+    Task existingTask = findTaskById(id);
+    Task data = Objects.requireNonNull(partialTask);
 
-        if (data.getTitle() != null) existingTask.setTitle(data.getTitle());
-        if (data.getDescription() != null) existingTask.setDescription(data.getDescription());
-        existingTask.setCompleted(data.isCompleted());
+    if (data.getTitle() != null) existingTask.setTitle(data.getTitle());
+    if (data.getDescription() != null) existingTask.setDescription(data.getDescription());
+    if (data.getDueDate() != null) existingTask.setDueDate(data.getDueDate());
+    if (data.getPriority() != null) existingTask.setPriority(data.getPriority());
+    
+    existingTask.setCompleted(data.isCompleted());
 
-        return taskRepository.save(existingTask);
-    }
+    return taskRepository.save(existingTask);
+}
 
     public void deleteTaskById(Long id) {
         Task taskToDelete = findTaskById(id);
