@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; 
 import styled from 'styled-components';
 import { 
   LogOut, Plus, CheckCircle2, 
@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import api from '../services/api'; 
 
-// --- Estilos de Layout ---
+// --- Estilos de Layout 
 const ShellContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -87,25 +88,57 @@ export const WelcomePage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskInput, setTaskInput] = useState('');
 
-  const addTask = () => {
+  // 1. CARREGAR TAREFAS (GET)
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const response = await api.get('/tasks'); 
+        setTasks(response.data);
+      } catch (error) {
+        console.error("Erro ao carregar tarefas do banco:", error);
+      }
+    };
+    loadTasks();
+  }, []);
+
+  // 2. ADICIONAR TAREFA (POST)
+  const addTask = async () => {
     if (!taskInput.trim()) return;
-    const newTask = { id: Date.now(), text: taskInput, completed: false };
-    setTasks([newTask, ...tasks]);
-    setTaskInput('');
+    try {
+      const response = await api.post('/tasks', { 
+        text: taskInput, 
+        completed: false 
+      });
+      setTasks([response.data, ...tasks]); 
+      setTaskInput('');
+    } catch (error) {
+      alert("Erro ao salvar no banco de dados.");
+    }
   };
 
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  // 3. MARCAR COMO CONCLUÍDO (PUT)
+  const toggleTask = async (task: Task) => {
+    try {
+      const updatedTask = { ...task, completed: !task.completed };
+      await api.put(`/tasks/${task.id}`, updatedTask);
+      setTasks(tasks.map(t => t.id === task.id ? updatedTask : t));
+    } catch (error) {
+      alert("Erro ao atualizar tarefa.");
+    }
   };
 
-  const deleteTask = (id: number) => {
-    setTasks(tasks.filter(t => t.id !== id));
+  // 4. DELETAR TAREFA (DELETE)
+  const deleteTask = async (id: number) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      setTasks(tasks.filter(t => t.id !== id));
+    } catch (error) {
+      alert("Erro ao excluir do banco.");
+    }
   };
 
   const handleLogout = () => {
-    // Limpa o token para garantir que o sistema não entre direto na próxima vez
     localStorage.removeItem('token');
-    // Redireciona para a raiz (Login)
     window.location.href = '/';
   };
 
@@ -150,14 +183,14 @@ export const WelcomePage = () => {
         <section style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {tasks.length === 0 && (
             <p style={{ color: '#475569', textAlign: 'center', marginTop: '20px' }}>
-              Nenhuma tarefa por enquanto.
+              Nenhuma tarefa salva no seu perfil.
             </p>
           )}
           {tasks.map(task => (
             <TaskCard key={task.id} completed={task.completed}>
               <div 
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer' }} 
-                onClick={() => toggleTask(task.id)}
+                onClick={() => toggleTask(task)}
               >
                 {task.completed ? 
                   <CheckCircle2 size={22} color="#22c55e" /> : 
@@ -176,7 +209,7 @@ export const WelcomePage = () => {
                 style={{ 
                   background: 'none', 
                   border: 'none', 
-                  color: '#94a3b8', // Cor da lixeira clareada
+                  color: '#94a3b8', 
                   cursor: 'pointer',
                   padding: '5px'
                 }}
