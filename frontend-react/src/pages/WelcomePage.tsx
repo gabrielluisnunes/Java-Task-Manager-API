@@ -93,7 +93,7 @@ export const WelcomePage = () => {
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const response = await api.get('/api/tasks'); 
+        const response = await api.get('/tasks'); 
         setTasks(response.data);
       } catch (error) {
         console.error("Erro ao carregar:", error);
@@ -106,7 +106,7 @@ export const WelcomePage = () => {
   const addTask = async () => {
     if (!taskInput.trim()) return;
     try {
-      const response = await api.post('/api/tasks', { 
+      const response = await api.post('/tasks', { 
         title: taskInput,     
         completed: false 
       });
@@ -122,7 +122,7 @@ export const WelcomePage = () => {
   const toggleTask = async (task: Task) => {
     try {
       const updatedStatus = { completed: !task.completed };
-      const response = await api.patch(`/api/tasks/${task.id}`, updatedStatus);
+      const response = await api.patch(`/tasks/${task.id}`, updatedStatus);
       setTasks(tasks.map(t => t.id === task.id ? response.data : t));
     } catch (error) {
       alert("Erro ao atualizar status.");
@@ -132,7 +132,7 @@ export const WelcomePage = () => {
   // 4. DELETAR TAREFA (DELETE)
   const deleteTask = async (id: number) => {
     try {
-      await api.delete(`/api/tasks/${id}`);
+      await api.delete(`/tasks/${id}`);
       setTasks(tasks.filter(t => t.id !== id));
     } catch (error) {
       alert("Erro ao excluir.");
