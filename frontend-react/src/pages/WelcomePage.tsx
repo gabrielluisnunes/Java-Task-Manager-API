@@ -8,7 +8,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import api from '../services/api';
 
-// --- Styled Components Responsivos ---
+// --- Styled Components ---
 const ShellContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -62,6 +62,17 @@ const DateInput = styled.input`
   &::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 `;
 
+const NavItem = styled.div<{ active: boolean }>`
+  color: ${props => props.active ? '#6366f1' : '#64748b'};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { color: #818cf8; }
+`;
+
 interface Task {
   id: number;
   title: string;
@@ -75,6 +86,7 @@ export const WelcomePage = () => {
   const [taskInput, setTaskInput] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [activeTab, setActiveTab] = useState('inicio');
 
   useEffect(() => { loadTasks(); }, []);
 
@@ -92,7 +104,7 @@ export const WelcomePage = () => {
         title: taskInput, 
         priority: priority,
         completed: false,
-        dueDate: dueDate // Enviando a data selecionada no input
+        dueDate: dueDate 
       });
       setTasks([response.data, ...tasks]);
       setTaskInput('');
@@ -114,11 +126,9 @@ export const WelcomePage = () => {
     } catch (error) { console.error(error); }
   };
 
-  // Função para formatar a data de forma segura
   const formatDate = (dateString: string) => {
     if (!dateString) return "Sem data";
     const date = new Date(dateString);
-    // Adiciona o offset do timezone para evitar que a data mude para o dia anterior
     const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
     return isNaN(adjustedDate.getTime()) ? "Data Inválida" : adjustedDate.toLocaleDateString('pt-BR');
   };
@@ -129,76 +139,97 @@ export const WelcomePage = () => {
     return 'BAIXA';
   };
 
+  // --- SUB-TELAS  ---
+
+  const InicioView = () => (
+    <>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>Minha Rotina</h1>
+        <button onClick={() => { localStorage.removeItem('token'); window.location.href='/'; }} 
+          style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '10px' }}>
+          <LogOut size={18} />
+        </button>
+      </header>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '28px' }}>
+        <Input icon={Plus} placeholder="O que vamos realizar?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button onClick={() => setPriority('LOW')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'LOW' ? '#22c55e' : '#1e293b', color: 'white', fontWeight: 'bold' }}>BAIXA</button>
+            <button onClick={() => setPriority('MEDIUM')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'MEDIUM' ? '#f59e0b' : '#1e293b', color: 'white', fontWeight: 'bold' }}>MÉDIA</button>
+            <button onClick={() => setPriority('HIGH')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'HIGH' ? '#ef4444' : '#1e293b', color: 'white', fontWeight: 'bold' }}>ALTA</button>
+          </div>
+          <DateInput type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        </div>
+        <Button onClick={addTask} style={{ borderRadius: '14px', height: '45px' }}>Criar Tarefa</Button>
+      </div>
+
+      <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {tasks.map(task => (
+          <TaskCard key={task.id} completed={task.completed}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: '14px', flex: 1 }} onClick={() => toggleTask(task)}>
+                <div style={{ marginTop: '3px' }}>
+                  {task.completed ? <CheckCircle2 size={24} color="#22c55e" /> : <Circle size={24} color="#334155" />}
+                </div>
+                <div>
+                  <p style={{ color: 'white', margin: 0, fontSize: '0.95rem', textDecoration: task.completed ? 'line-through' : 'none', opacity: task.completed ? 0.5 : 1 }}>{task.title}</p>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
+                    <PriorityBadge level={task.priority}>{translatePriority(task.priority)}</PriorityBadge>
+                    <span style={{ color: '#64748b', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CalendarIcon size={14} /> {formatDate(task.dueDate)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}><Trash2 size={18} /></button>
+            </div>
+          </TaskCard>
+        ))}
+      </section>
+    </>
+  );
+
+  const PerfilView = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem', color: 'white' }}>
+      <h2 style={{ fontWeight: 800 }}>Meu Perfil</h2>
+      <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold' }}>G</div>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>Gabriel Teste</p>
+        <p style={{ color: '#64748b' }}>gabriel@email.com</p>
+      </div>
+      <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '15px', textAlign: 'center' }}>
+          <p style={{ color: '#64748b', fontSize: '0.7rem', marginBottom: '5px' }}>CONCLUÍDAS</p>
+          <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>{tasks.filter(t => t.completed).length}</p>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '15px', textAlign: 'center' }}>
+          <p style={{ color: '#64748b', fontSize: '0.7rem', marginBottom: '5px' }}>PENDENTES</p>
+          <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>{tasks.filter(t => !t.completed).length}</p>
+        </div>
+      </div>
+      <Button style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', marginTop: '20px' }} onClick={() => { localStorage.removeItem('token'); window.location.href='/'; }}>Sair da Conta</Button>
+    </div>
+  );
+
   return (
     <ShellContainer>
       <ContentArea>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>Minha Rotina</h1>
-          <button onClick={() => { localStorage.removeItem('token'); window.location.href='/'; }} 
-            style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '10px' }}>
-            <LogOut size={18} />
-          </button>
-        </header>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '28px' }}>
-          <Input 
-            icon={Plus} 
-            placeholder="O que vamos realizar?" 
-            value={taskInput}
-            onChange={(e) => setTaskInput(e.target.value)}
-          />
-          
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={() => setPriority('LOW')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'LOW' ? '#22c55e' : '#1e293b', color: 'white', fontWeight: 'bold' }}>BAIXA</button>
-              <button onClick={() => setPriority('MEDIUM')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'MEDIUM' ? '#f59e0b' : '#1e293b', color: 'white', fontWeight: 'bold' }}>MÉDIA</button>
-              <button onClick={() => setPriority('HIGH')} style={{ padding: '6px 12px', borderRadius: '10px', border: 'none', fontSize: '0.65rem', background: priority === 'HIGH' ? '#ef4444' : '#1e293b', color: 'white', fontWeight: 'bold' }}>ALTA</button>
-            </div>
-            
-            <DateInput 
-              type="date" 
-              value={dueDate} 
-              onChange={(e) => setDueDate(e.target.value)} 
-            />
+        {activeTab === 'inicio' && <InicioView />}
+        {activeTab === 'perfil' && <PerfilView />}
+        {(activeTab === 'tarefas' || activeTab === 'favoritos') && (
+          <div style={{ color: 'white', textAlign: 'center', marginTop: '50px' }}>
+            <h2>Em breve...</h2>
+            <p style={{ color: '#64748b' }}>Estamos trabalhando nesta seção!</p>
           </div>
-
-          <Button onClick={addTask} style={{ borderRadius: '14px', height: '45px' }}>Criar Tarefa</Button>
-        </div>
-
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {tasks.map(task => (
-            <TaskCard key={task.id} completed={task.completed}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', gap: '14px', flex: 1 }} onClick={() => toggleTask(task)}>
-                  <div style={{ marginTop: '3px' }}>
-                    {task.completed ? <CheckCircle2 size={24} color="#22c55e" /> : <Circle size={24} color="#334155" />}
-                  </div>
-                  <div>
-                    <p style={{ color: 'white', margin: 0, fontSize: '0.95rem', textDecoration: task.completed ? 'line-through' : 'none', opacity: task.completed ? 0.5 : 1 }}>
-                      {task.title}
-                    </p>
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
-                      <PriorityBadge level={task.priority}>{translatePriority(task.priority)}</PriorityBadge>
-                      <span style={{ color: '#64748b', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <CalendarIcon size={14} /> {formatDate(task.dueDate)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            </TaskCard>
-          ))}
-        </section>
+        )}
       </ContentArea>
 
-      <nav style={{ position: 'fixed', bottom: '25px', width: '90%', maxWidth: '400px', height: '70px', background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(10px)', borderRadius: '25px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ color: '#6366f1', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><Home size={22} /><span style={{fontSize: '0.65rem', fontWeight: 700}}>Início</span></div>
-        <div style={{ color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><List size={22} /><span style={{fontSize: '0.65rem'}}>Tarefas</span></div>
-        <div style={{ color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><Star size={22} /><span style={{fontSize: '0.65rem'}}>Favoritos</span></div>
-        <div style={{ color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}><User size={22} /><span style={{fontSize: '0.65rem'}}>Perfil</span></div>
+      <nav style={{ position: 'fixed', bottom: '25px', width: '90%', maxWidth: '400px', height: '70px', background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(10px)', borderRadius: '25px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+        <NavItem active={activeTab === 'inicio'} onClick={() => setActiveTab('inicio')}><Home size={22} /><span style={{fontSize: '0.65rem'}}>Início</span></NavItem>
+        <NavItem active={activeTab === 'tarefas'} onClick={() => setActiveTab('tarefas')}><List size={22} /><span style={{fontSize: '0.65rem'}}>Tarefas</span></NavItem>
+        <NavItem active={activeTab === 'favoritos'} onClick={() => setActiveTab('favoritos')}><Star size={22} /><span style={{fontSize: '0.65rem'}}>Favoritos</span></NavItem>
+        <NavItem active={activeTab === 'perfil'} onClick={() => setActiveTab('perfil')}><User size={22} /><span style={{fontSize: '0.65rem'}}>Perfil</span></NavItem>
       </nav>
     </ShellContainer>
   );
