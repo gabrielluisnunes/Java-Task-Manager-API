@@ -4,7 +4,7 @@ import { theme } from './styles/theme';
 import { GlobalStyles } from './styles/GlobalStyles'; 
 import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
-import { WelcomePage } from './pages/WelcomePage'; 
+import { Dashboard } from './pages/Dashboard'; 
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -31,7 +31,7 @@ function App() {
           <RegisterPage onSwitch={() => setCurrentScreen('login')} />
         )
       ) : (
-        <WelcomePage />
+        <Dashboard />
       )}
     </ThemeProvider>
   );
